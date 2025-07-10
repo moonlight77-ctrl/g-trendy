@@ -25,6 +25,7 @@ matiere: string;
 taille: string;
 est_disponible: boolean;
 tailles_articles: TailleArticle[];
+labels?: string[];
 }
 interface TailleArticle {
   taille: string;
@@ -40,7 +41,7 @@ export default function Catalogue() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  const { ajouterArticle } = usePanier();
+  //const { ajouterArticle } = usePanier();
   const [valeurMaxJeton, setValeurMaxJeton] = useState<number | null>(null);
   const [marquesDispo, setMarquesDispo] = useState<string[]>([]);
   const [marquesActives, setMarquesActives] = useState<string[]>([]);
@@ -54,8 +55,8 @@ export default function Catalogue() {
   const [abonnementsDispo, setAbonnementsDispo] = useState<string[]>([]);
   const [abonnementsActifs, setAbonnementsActifs] = useState<string[]>([]);
   const [menuJetonsOuvert, setMenuJetonsOuvert] = useState(false);
-
-
+  const [labelsDispo, setLabelsDispo] = useState<string[]>([]);
+  const [labelsActifs, setLabelsActifs] = useState<string[]>([]);
   const genre = searchParams.get('genre');
 
 
@@ -66,6 +67,7 @@ export default function Catalogue() {
     setTaillesActives([]);
     setValeurMaxJeton(null);
     setAbonnementsActifs([]);
+    setLabelsActifs([]);
     setFiltrerDisponibles(false);
     // Ajout d'autres filtres  ici
   };
@@ -142,6 +144,20 @@ useEffect( () => {
     setArticles(fullArticles);
   }
 
+  // 6bis. Récupération des labels distincts
+const { data: allLabelsData, error: errLabels } = await supabase
+  .from('articles')
+  .select('labels')
+  .not('labels', 'is', null);
+
+if (!errLabels && allLabelsData) {
+  // Aplatir tous les tableaux de labels
+  const allLabels = allLabelsData.flatMap(a => a.labels || []);
+  const uniques = [...new Set(allLabels)];
+  setLabelsDispo(uniques);
+}
+
+
   // 7.Abonnement
   const { data: niveauxData, error: errNiveaux } = await supabase
         .from('articles')
@@ -162,11 +178,12 @@ useEffect( () => {
   const initialCouleurs = searchParams.get('couleur');
   const initialTailles = searchParams.get('taille');
   const initialJeton = searchParams.get('maxJeton');
+  const initialLabels = searchParams.get('label');
   if (initialMarques) setMarquesActives(initialMarques.split(','));
   if (initialCouleurs) setCouleursActives(initialCouleurs.split(','));
   if (initialJeton) setValeurMaxJeton(Number(initialJeton));
   if (initialTailles) setTaillesActives(initialTailles.split(','));
-
+  if (initialLabels) setLabelsActifs(initialLabels.split(','));
 
 
   // 10. Chargement de l'utilisateur
@@ -240,7 +257,15 @@ useEffect( () => {
               updateQuery('abonnement', values);
             }}
           />
-
+          <MultiSelectDropdown
+            label="Label"
+            options={labelsDispo}
+            selected={labelsActifs}
+            onChange={(values) => {
+              setLabelsActifs(values);
+              updateQuery('label', values);
+            }}
+          />
           {/* Filtre jetons */}
           <div className="relative">
             <button 
@@ -309,12 +334,11 @@ useEffect( () => {
               (couleursActives.length === 0 || couleursActives.includes(a.couleur)) &&
               (matieresActives.length === 0 || matieresActives.includes(a.matiere)) &&
               (taillesActives.length === 0 || taillesActives.includes(a.taille)) &&
+              (labelsActifs.length === 0 || (Array.isArray(a.labels) && labelsActifs.every(label => a.labels?.includes(label)))) &&
               (abonnementsActifs.length === 0 || abonnementsActifs.includes(a.niveau)) &&
               (!filtrerDisponibles || a.est_disponible === true)
             )
-
-            /*<p className="text-sm text-gray-600">{a.description}</p>*/
-            /*<p className="text-sm mt-1"><strong>Catégorie :</strong> {a.categorie}</p>*/
+            
             .map((a) => (
               <div key={a.id} className="bg-white rounded shadow p-4">
                 <img 
@@ -323,6 +347,18 @@ useEffect( () => {
                 className="w-full aspect-[3/4] object-cover rounded"
                 />
                 <h2 className="text-xl font-semibold mt-2">{a.titre}</h2>
+                {a.labels && a.labels.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {a.labels.map((label) => (
+                      <span
+                        key={label}
+                        className="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded"
+                      >
+                        {label}
+                      </span>
+                    ))}
+                  </div>
+                )}
                  {a.tailles_articles && a.tailles_articles.length > 0 && (
                   <div className="mt-2">
                     <p className="text-xs text-gray-500 mb-1">Tailles :</p>

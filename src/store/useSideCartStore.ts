@@ -17,7 +17,12 @@ interface SideCartState {
   setReservations: (
     updater: Reservation[] | ((prev: Reservation[]) => Reservation[])
   ) => void;
+
+  
+  
 }
+
+
 
 export const useSideCartStore = create<SideCartState>((set) => ({
   reservations: [],

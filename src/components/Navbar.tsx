@@ -1,4 +1,4 @@
-'use client';
+ 'use client';
 
 import { useEffect, useState, useRef } from 'react';
 import { Menu } from '@headlessui/react';
@@ -12,9 +12,9 @@ import { useRouter } from 'next/navigation';
 export default function Navbar() {
   const [user, setUser] = useState<any>(null);
   const [jetons, setJetons] = useState<number | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [cartOpen, setCartOpen] = useState(false);
-  const [cartHovering, setCartHovering] = useState(false);
+  //const [userId, setUserId] = useState<string | null>(null);
+  //const [cartOpen, setCartOpen] = useState(false);
+  //const [cartHovering, setCartHovering] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const cartTimeout = useRef<NodeJS.Timeout | null>(null);
   const router = useRouter();
