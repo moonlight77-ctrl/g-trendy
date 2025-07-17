@@ -26,7 +26,10 @@ taille: string;
 est_disponible: boolean;
 tailles_articles: TailleArticle[];
 labels?: string[];
+genre: string;
+type: string;
 }
+
 interface TailleArticle {
   taille: string;
   disponible: boolean;
@@ -41,7 +44,8 @@ export default function Catalogue() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  //const { ajouterArticle } = usePanier();
+  const type = searchParams.get('type');
+  const genre = searchParams.get('genre');
   const [valeurMaxJeton, setValeurMaxJeton] = useState<number | null>(null);
   const [marquesDispo, setMarquesDispo] = useState<string[]>([]);
   const [marquesActives, setMarquesActives] = useState<string[]>([]);
@@ -57,7 +61,6 @@ export default function Catalogue() {
   const [menuJetonsOuvert, setMenuJetonsOuvert] = useState(false);
   const [labelsDispo, setLabelsDispo] = useState<string[]>([]);
   const [labelsActifs, setLabelsActifs] = useState<string[]>([]);
-  const genre = searchParams.get('genre');
 
 
   const resetFiltres = () => {
@@ -113,7 +116,7 @@ useEffect( () => {
       .from('articles')
       .select('matiere')
       .neq('matiere', null)
-
+      
       if (!errMatieres && matieresData) {
         const uniques = [...new Set(matieresData.map((a) => a.matiere))];
         setMatieresDispo(uniques);
@@ -151,7 +154,9 @@ const { data: allLabelsData, error: errLabels } = await supabase
   .not('labels', 'is', null);
 
 if (!errLabels && allLabelsData) {
+
   // Aplatir tous les tableaux de labels
+
   const allLabels = allLabelsData.flatMap(a => a.labels || []);
   const uniques = [...new Set(allLabels)];
   setLabelsDispo(uniques);
@@ -179,6 +184,7 @@ if (!errLabels && allLabelsData) {
   const initialTailles = searchParams.get('taille');
   const initialJeton = searchParams.get('maxJeton');
   const initialLabels = searchParams.get('label');
+
   if (initialMarques) setMarquesActives(initialMarques.split(','));
   if (initialCouleurs) setCouleursActives(initialCouleurs.split(','));
   if (initialJeton) setValeurMaxJeton(Number(initialJeton));
@@ -206,8 +212,7 @@ if (!errLabels && allLabelsData) {
 
     <div className="grid grid-cols-[240px_1fr] gap-6">
       {/* Sidebar verticale */}
-      <FiltreVertical />
-
+      <FiltreVertical/>
       {/* Section principale */}
       <section>
         {/* Filtres horizontaux */}
@@ -336,29 +341,42 @@ if (!errLabels && allLabelsData) {
               (taillesActives.length === 0 || taillesActives.includes(a.taille)) &&
               (labelsActifs.length === 0 || (Array.isArray(a.labels) && labelsActifs.every(label => a.labels?.includes(label)))) &&
               (abonnementsActifs.length === 0 || abonnementsActifs.includes(a.niveau)) &&
+              (genre === null || a.genre === genre) &&
+              (type === null || a.type === type) && 
               (!filtrerDisponibles || a.est_disponible === true)
             )
             
             .map((a) => (
+              
               <div key={a.id} className="bg-white rounded shadow p-4">
-                <img 
-                src={a.image_url}
-                alt={a.titre}
-                className="w-full aspect-[3/4] object-cover rounded"
+                <div className='relative'>
+                  <img 
+                  src={a.image_url}
+                  alt={a.titre}
+                  className="w-full aspect-[3/4] object-cover rounded"
                 />
-                <h2 className="text-xl font-semibold mt-2">{a.titre}</h2>
-                {a.labels && a.labels.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {a.labels.map((label) => (
-                      <span
-                        key={label}
-                        className="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded"
-                      >
-                        {label}
-                      </span>
-                    ))}
-                  </div>
-                )}
+
+                  {/* Labels en haut à droite */}
+                    {a.labels && a.labels.length > 0 && (
+                      <div className="absolute top-2 right-2 flex flex-col items-end gap-1 z-10">
+                        {a.labels.map((label) => (
+                          <span
+                            key={label}
+                            className={`text-white text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full shadow
+                              ${
+                                label === 'nouveau' ? 'bg-green-600' :
+                                label === 'collaboration' ? 'bg-pink-500' :
+                                'bg-black/70'
+                              }`}
+                          >
+                            {label}
+                          </span>
+                        ))}
+                      </div>
+
+                    )}
+
+                </div>
                  {a.tailles_articles && a.tailles_articles.length > 0 && (
                   <div className="mt-2">
                     <p className="text-xs text-gray-500 mb-1">Tailles :</p>

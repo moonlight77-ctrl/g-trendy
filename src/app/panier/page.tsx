@@ -174,6 +174,26 @@ export default function PanierPage() {
                 Solde estimé après paiement : {soldeEstimé} jetons
               </p>
             )}
+            <div className="mt-4">
+              <label htmlFor="promo" className="block text-sm font-medium text-gray-700 mb-1">
+                Code promo
+              </label>
+              <div className="flex">
+                <input
+                  id="promo"
+                  type="text"
+                  placeholder="Saisir un code"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                />
+                <button
+                  type="button"
+                  className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-r-md hover:bg-purple-700 transition"
+                >
+                  Appliquer
+                </button>
+              </div>
+            </div>
+
             <Button 
               className="w-full mt-4"
               onClick={() => router.push('/confirmation')}
