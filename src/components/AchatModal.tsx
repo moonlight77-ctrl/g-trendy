@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { useSideCartStore } from '@/store/useSideCartStore';
 
 interface Props {
   article: any;
@@ -10,10 +11,26 @@ interface Props {
   preselectedTaille?: string;
 }
 
+// 💡 Typage clair de la vente (tu peux aussi l’importer depuis types.ts)
+interface Vente {
+  id: string;
+  user_id: string;
+  article_id: string;
+  taille: string;
+  prix_vente: number;
+  statut: string;
+  articles: {
+    titre: string;
+    image_url: string;
+  };
+}
+
+
 export default function AchatModal({ article, onClose, preselectedTaille }: Props) {
   const [tailleSelectionnee, setTailleSelectionnee] = useState<string | null>(preselectedTaille || null);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const { ventes, setVentes } = useSideCartStore();
 
   const handleBackgroundClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
@@ -32,6 +49,8 @@ export default function AchatModal({ article, onClose, preselectedTaille }: Prop
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
+
+
   const handleAchat = async () => {
   if (!tailleSelectionnee) {
     setMessage("Choisis une taille pour continuer.");
@@ -49,22 +68,53 @@ export default function AchatModal({ article, onClose, preselectedTaille }: Prop
     return;
   }
 
-  const { data, error } = await supabase.from('ventes').insert({
-    user_id: userId,
-    article_id: article.id,
-    taille: tailleSelectionnee,
-    prix_vente: article.prix_vente,
-    statut: 'en_attente', // facultatif car valeur par défaut
-  });
+  // 🔍 Récupère l'abonnement pour appliquer la réduction
+  const { data: aboData } = await supabase
+    .from('abonnements')
+    .select('niveau')
+    .eq('user_id', userId)
+    .single();
 
-  if (error) {
-    setMessage("Erreur lors de l'achat.");
-    console.error(error);
-  } else {
+  const reduction =
+    aboData?.niveau === 'Premium' ? 0.75 :
+    aboData?.niveau === 'Standard' ? 0.9 :
+    1;
+
+  const prixReduit = ((article.prix_apres_location ?? article.prix_vente) * reduction);
+
+  // 🛒 Insère la vente dans Supabase
+  const { data, error } = await supabase
+    .from('ventes')
+    .insert({
+      user_id: userId,
+      article_id: article.id,
+      taille: tailleSelectionnee,
+      prix_vente: prixReduit,
+      statut: 'panier',
+    })
+    .select();
+
+  if (!error && data && data.length > 0) {
+    const venteInseree = data[0];
+
+    const nouvelleVente: Vente = {
+      id: venteInseree.id,
+      user_id: userId,
+      article_id: article.id,
+      taille: tailleSelectionnee,
+      prix_vente: prixReduit,
+      statut: 'panier',
+      articles: {
+        titre: article.titre,
+        image_url: article.image_url,
+      },
+    };
+
+    setVentes([...ventes, nouvelleVente]);
     setMessage("Achat confirmé 🎉");
-    setTimeout(() => {
-      onClose();
-    }, 1500);
+    setTimeout(() => onClose(), 1500);
+  } else {
+    setMessage("Erreur lors de l’achat. Réessaie.");
   }
 
   setLoading(false);
@@ -90,7 +140,10 @@ export default function AchatModal({ article, onClose, preselectedTaille }: Prop
         <h2 className="text-xl font-bold mb-2">{article.titre}</h2>
         <img src={article.image_url} alt={article.titre} className="w-full h-48 object-cover rounded mb-2" />
         <p className="text-sm text-gray-600">{article.description}</p>
-        <p className="text-green-600 font-bold mt-2">{article.prix_vente.toFixed(2)} €</p>
+
+        <p className="text-green-600 font-bold mt-2">
+          {(article.prix_apres_location ?? article.prix_vente).toFixed(2)} €
+        </p>
 
         <label className="block mt-4 mb-2 text-sm font-medium">Choisir une taille :</label>
         <div className="flex flex-wrap gap-2">

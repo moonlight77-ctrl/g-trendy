@@ -6,7 +6,6 @@ import { X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useSideCartStore } from '@/store/useSideCartStore';
 
-
 interface Props {
   article: any;
   onClose: () => void;
@@ -19,16 +18,13 @@ export default function ReservationModal({ article, onClose, userId, preselected
   const [message, setMessage] = useState('');
   const [jetons, setJetons] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
+  //const router = useRouter();
   const { setReservations, reservations } = useSideCartStore();
-
-
 
   const handleBackgroundClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
       onClose();
     }
-  
   }, [onClose]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -37,12 +33,10 @@ export default function ReservationModal({ article, onClose, userId, preselected
     }
   }, [onClose]);
 
-    useEffect(() => {
+  useEffect(() => {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
-
-
 
   useEffect(() => {
     const fetchJetons = async () => {
@@ -62,7 +56,7 @@ export default function ReservationModal({ article, onClose, userId, preselected
     fetchJetons();
   }, [userId]);
 
-  const handleReservation = async () => {
+const handleReservation = async () => {
   if (!tailleSelectionnee) return setMessage("Choisis une taille.");
   if (jetons === null) return setMessage("Chargement des jetons...");
   if (jetons < article.valeur_jeton) {
@@ -76,7 +70,7 @@ export default function ReservationModal({ article, onClose, userId, preselected
     user_id: userId,
     taille: tailleSelectionnee,
     statut: 'en_attente',
-  }).select().single(); // 👈 pour récupérer l'objet inséré avec l'id
+  }).select().single();
 
   if (insertError || !data) {
     setMessage("Erreur lors de la réservation.");
@@ -84,33 +78,25 @@ export default function ReservationModal({ article, onClose, userId, preselected
     return;
   }
 
-  const { error: updateError } = await supabase
-    .from('abonnements')
-    .update({ jetons_disponibles: jetons - article.valeur_jeton })
-    .eq('user_id', userId);
-
-  if (updateError) {
-    setMessage("Erreur lors de la mise à jour des jetons.");
-  } else {
-    setReservations([
-      ...reservations,
-      {
-        id: data.id, // ✅ ID réel Supabase
-        taille: tailleSelectionnee,
-        valeur_jeton: article.valeur_jeton,
-        articles: {
-          titre: article.titre,
-          image_url: article.image_url,
-          valeur_jeton: article.valeur_jeton
-        }
+  setReservations([
+    ...reservations,
+    {
+      id: data.id,
+      taille: tailleSelectionnee,
+      statut: 'en_attente',
+      user_id: userId,
+      articles: {
+        titre: article.titre,
+        image_url: article.image_url,
+        valeur_jeton: article.valeur_jeton
       }
-    ]);
-    setMessage("Réservation confirmée 🎉");
-    setTimeout(onClose, 1500);
-  }
-
+    }
+  ]);
+  setMessage("Réservation ajoutée 🎉");
+  setTimeout(onClose, 1500);
   setLoading(false);
 };
+
 
   return (
     <div 

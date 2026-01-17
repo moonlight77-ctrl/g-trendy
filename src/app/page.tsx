@@ -1,9 +1,11 @@
+// src/app/page.tsx
+import { redirect } from "next/navigation";
 
+export const metadata = {
+  title: "Rejoins la waitlist",
+  description: "Inscris-toi pour être parmi les premiers.",
+};
 
 export default function Home() {
-  return (
-       <main className="flex min-h-screen items-center justify-center bg-gray-100">
-      <h1 className="text-4xl font-bold text-blue-600">Bienvenue sur GranDressing 👗</h1>
-    </main>
-  );
+  redirect("\waitlist"); // 307 côté Next — propre et réversible
 }

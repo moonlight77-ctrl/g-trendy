@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import MultiSelectDropdown from '@/components/MultiSelectDropdown';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import PrixAvecReduction from '@/components/PrixAvecReduction';
-import AchatModal from '@/components/AchatModal';
 import FiltreVertical from '@/components/FiltreVertical';
+import MultiSelectDropdown from '@/components/MultiSelectDropdown';
+import AchatModal from '@/components/AchatModal';
+import PrixAvecReduction from '@/components/PrixAvecReduction';
 import Link from 'next/link';
 
 interface Article {
@@ -19,6 +19,7 @@ interface Article {
   en_vente: boolean;
   taille: string;
   labels?: string[];
+  categorie: string; 
   couleur: string;
   matiere: string;
   genre: string;
@@ -41,7 +42,6 @@ export default function Friperie() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [marquesDispo, setMarquesDispo] = useState<string[]>([]);
   const [marquesActives, setMarquesActives] = useState<string[]>([]);
-  const [userAbonnement, setUserAbonnement] = useState<'non' | 'standard' | 'premium'>('non');
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [preselectedTaille, setPreselectedTaille] = useState<string | undefined>(undefined);
 
@@ -64,7 +64,9 @@ export default function Friperie() {
   const pathname = usePathname();
   const genre = searchParams.get('genre');
   const type = searchParams.get('type');
+  const categorie = searchParams.get('categorie');
 
+  // Reset filtres horizontaux
   const resetFiltres = () => {
     setMarquesActives([]);
     setCouleursActives([]);
@@ -76,6 +78,7 @@ export default function Friperie() {
     setFiltrerDisponibles(false);
   };
 
+  // Synchronisation URL filtre horizontal
   const updateQuery = (key: string, values: string[]) => {
     const params = new URLSearchParams(searchParams);
     if (values.length === 0) {
@@ -87,27 +90,71 @@ export default function Friperie() {
   };
 
   useEffect(() => {
-    const fetchAbonnement = async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData?.user) return;
+    // Chargement dynamique des valeurs pour chaque filtre horizontal
+    const fetchData = async () => {
+      // Marques
+      const { data: marquesData } = await supabase
+        .from('articles')
+        .select('marque')
+        .neq('marque', null);
 
-      const { data } = await supabase
-        .from('abonnements')
+      if (marquesData) {
+        setMarquesDispo([...new Set(marquesData.map((a) => a.marque))]);
+      }
+
+      // Couleurs
+      const { data: couleursData } = await supabase
+        .from('articles')
+        .select('couleur')
+        .neq('couleur', null);
+
+      if (couleursData) {
+        setCouleursDispo([...new Set(couleursData.map((a) => a.couleur))]);
+      }
+
+      // Matières
+      const { data: matieresData } = await supabase
+        .from('articles')
+        .select('matiere')
+        .neq('matiere', null);
+
+      if (matieresData) {
+        setMatieresDispo([...new Set(matieresData.map((a) => a.matiere))]);
+      }
+
+      // Tailles
+      const { data: taillesData } = await supabase
+        .from('tailles_articles')
+        .select('taille')
+        .neq('taille', null);
+
+      if (taillesData) {
+        setTaillesDispo([...new Set(taillesData.map((a) => a.taille))]);
+      }
+
+      // Abonnements/niveaux
+      const { data: niveauxData } = await supabase
+        .from('articles')
         .select('niveau')
-        .eq('user_id', userData.user.id)
-        .single();
+        .neq('niveau', null);
 
-      if (data?.niveau === 'Premium') setUserAbonnement('premium');
-      else if (data?.niveau === 'Standard') setUserAbonnement('standard');
-      else setUserAbonnement('non');
-    };
+      if (niveauxData) {
+        setAbonnementsDispo([...new Set(niveauxData.map((a) => a.niveau))]);
+      }
 
-    fetchAbonnement();
-  }, []);
+      // Labels
+      const { data: allLabelsData } = await supabase
+        .from('articles')
+        .select('labels')
+        .not('labels', 'is', null);
 
-  useEffect(() => {
-    const fetchArticles = async () => {
-      const { data, error } = await supabase
+      if (allLabelsData) {
+        const allLabels = allLabelsData.flatMap(a => a.labels || []);
+        setLabelsDispo([...new Set(allLabels)]);
+      }
+
+      // Articles avec tailles_articles et calcul location
+      const { data: fullArticles } = await supabase
         .from('articles')
         .select(`
           *,
@@ -122,50 +169,139 @@ export default function Friperie() {
         `)
         .eq('en_vente', true);
 
-      if (!data) return;
+      if (fullArticles) {
+        // Calcul du nombre de locations et du prix ajusté
+        const mapped = fullArticles.map((article: any) => {
+          const enLocation = article.reservations?.some((r: any) =>
+            ['en_attente', 'confirmé'].includes(r.statut)
+          );
+          const nbLocations = article.reservations?.length || 0;
+          const prixAvecLocations = article.prix_vente * Math.pow(0.95, nbLocations);
 
-      const mapped = data.map((article) => {
-        const enLocation = article.reservations?.some((r: any) =>
-          ['en_attente', 'confirmé'].includes(r.statut)
-        );
-
-        const nbLocations = article.reservations?.length || 0;
-        const prixAvecLocations = article.prix_vente * Math.pow(0.95, nbLocations);
-
-        return {
-          ...article,
-          est_en_location: enLocation,
-          nb_locations: nbLocations,
-          prix_apres_location: prixAvecLocations,
-        };
-      });
-
-      setArticles(mapped);
+          return {
+            ...article,
+            est_en_location: enLocation,
+            nb_locations: nbLocations,
+            prix_apres_location: prixAvecLocations,
+          };
+        });
+        setArticles(mapped);
+      }
     };
 
-    fetchArticles();
+    fetchData();
   }, []);
+
+  // Synchronisation du state avec les params URL
+  useEffect(() => {
+    const initialMarques = searchParams.get('marque');
+    const initialCouleurs = searchParams.get('couleur');
+    const initialTailles = searchParams.get('taille');
+    const initialJeton = searchParams.get('maxJeton');
+    const initialLabels = searchParams.get('label');
+    const initialAbonnement = searchParams.get('abonnement');
+
+    if (initialMarques) setMarquesActives(initialMarques.split(','));
+    if (initialCouleurs) setCouleursActives(initialCouleurs.split(','));
+    if (initialTailles) setTaillesActives(initialTailles.split(','));
+    if (initialLabels) setLabelsActifs(initialLabels.split(','));
+    if (initialAbonnement) setAbonnementsActifs(initialAbonnement.split(','));
+    if (initialJeton) setValeurMaxJeton(Number(initialJeton));
+    if (searchParams.get('disponible') === '1') setFiltrerDisponibles(true);
+    else setFiltrerDisponibles(false);
+  }, [searchParams]);
 
   return (
     <main className="p-6 bg-gray-50 min-h-screen">
       <h1 className="text-3xl font-bold mb-6">Friperie</h1>
-
       <div className="grid grid-cols-[240px_1fr] gap-6">
         <FiltreVertical />
 
         <section>
           <div className="flex flex-wrap gap-4 mb-6 text-sm relative">
-            <MultiSelectDropdown label="Marque" options={marquesDispo} selected={marquesActives} onChange={(v) => { setMarquesActives(v); updateQuery('marque', v); }} />
-            <MultiSelectDropdown label="Couleur" options={couleursDispo} selected={couleursActives} onChange={(v) => { setCouleursActives(v); updateQuery('couleur', v); }} />
-            <MultiSelectDropdown label="Matière" options={matieresDispo} selected={matieresActives} onChange={(v) => { setMatieresActives(v); updateQuery('matiere', v); }} />
-            <MultiSelectDropdown label="Taille" options={taillesDispo} selected={taillesActives} onChange={(v) => { setTaillesActives(v); updateQuery('taille', v); }} />
+            <MultiSelectDropdown
+              label="Marque"
+              options={marquesDispo}
+              selected={marquesActives}
+              onChange={(v) => { setMarquesActives(v); updateQuery('marque', v); }}
+            />
+            <MultiSelectDropdown
+              label="Couleur"
+              options={couleursDispo}
+              selected={couleursActives}
+              onChange={(v) => { setCouleursActives(v); updateQuery('couleur', v); }}
+            />
+            <MultiSelectDropdown
+              label="Matière"
+              options={matieresDispo}
+              selected={matieresActives}
+              onChange={(v) => { setMatieresActives(v); updateQuery('matiere', v); }}
+            />
+            <MultiSelectDropdown
+              label="Taille"
+              options={taillesDispo}
+              selected={taillesActives}
+              onChange={(v) => { setTaillesActives(v); updateQuery('taille', v); }}
+            />
+            <MultiSelectDropdown
+              label="Abonnement"
+              options={abonnementsDispo}
+              selected={abonnementsActifs}
+              onChange={(v) => { setAbonnementsActifs(v); updateQuery('abonnement', v); }}
+            />
+            <MultiSelectDropdown
+              label="Label"
+              options={labelsDispo}
+              selected={labelsActifs}
+              onChange={(v) => { setLabelsActifs(v); updateQuery('label', v); }}
+            />
+
+            {/* Filtre jetons */}
+            <div className="relative">
+              <button 
+                className="border px-3 py-1 rounded"
+                onClick={() => setMenuJetonsOuvert(!menuJetonsOuvert)}
+              >
+                Jetons
+              </button>
+              {menuJetonsOuvert && (
+                <div className="absolute z-10 mt-2 w-48 bg-white border rounded shadow-md p-2">
+                  {[null, 2, 4, 999].map((val, i) => (
+                    <label key={val} className="block text-sm py-1 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="jetons"
+                        checked={valeurMaxJeton === val}
+                        onChange={() => {
+                          setValeurMaxJeton(val);
+                          const params = new URLSearchParams(searchParams);
+                          if (val === null) params.delete('maxJeton');
+                          else params.set('maxJeton', val.toString());
+                          router.push(`${pathname}?${params.toString()}`);
+                        }}
+                      />
+                      {val === null ? 'Tous' : val === 999 ? '5 jetons et +' : `${val - 1} à ${val} jetons`}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={filtrerDisponibles} onChange={(e) => {
-                setFiltrerDisponibles(e.target.checked);
-                const params = new URLSearchParams(searchParams);
-                e.target.checked ? params.set('disponible', '1') : params.delete('disponible');
-                router.push(`${pathname}?${params.toString()}`);
-              }} />
+              <input
+                type="checkbox"
+                checked={filtrerDisponibles}
+                onChange={(e) => {
+                  setFiltrerDisponibles(e.target.checked);
+                  const params = new URLSearchParams(searchParams);
+                  if (e.target.checked) {
+                    params.set('disponible', '1');
+                  } else {
+                    params.delete('disponible');
+                  }
+                  router.push(`${pathname}?${params.toString()}`);
+                }}
+              />
               Disponible maintenant
             </label>
             <button onClick={resetFiltres} className="text-sm text-red-600 underline">Tout réinitialiser</button>
@@ -183,6 +319,7 @@ export default function Friperie() {
                 (abonnementsActifs.length === 0 || abonnementsActifs.includes(a.niveau)) &&
                 (genre === null || a.genre === genre) &&
                 (type === null || a.type === type) &&
+                (categorie === null || a.categorie === categorie) &&
                 (!filtrerDisponibles || a.est_disponible === true)
               )
               .map((a) => (
@@ -201,10 +338,8 @@ export default function Friperie() {
                       </div>
                     )}
                   </div>
-
                   <h2 className="mt-2 font-semibold">{a.titre}</h2>
                   <p className="text-sm text-gray-500 mb-1">{a.marque}</p>
-
                   {a.tailles_articles && a.tailles_articles.length > 0 && (
                     <div className="mt-2">
                       <p className="text-xs text-gray-500 mb-1">Tailles disponibles :</p>
@@ -215,13 +350,11 @@ export default function Friperie() {
                       ))}
                     </div>
                   )}
-
                   <PrixAvecReduction
                     prixBase={a.prix_vente}
                     prix_apres_location={a.prix_apres_location}
                     est_en_location={a.est_en_location}
                   />
-
                   <button
                     onClick={() => {
                       setSelectedArticle(a);
@@ -236,7 +369,6 @@ export default function Friperie() {
           </div>
         </section>
       </div>
-
       {selectedArticle && (
         <AchatModal
           article={selectedArticle}
