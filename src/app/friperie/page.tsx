@@ -7,7 +7,6 @@ import FiltreVertical from '@/components/FiltreVertical';
 import MultiSelectDropdown from '@/components/MultiSelectDropdown';
 import AchatModal from '@/components/AchatModal';
 import PrixAvecReduction from '@/components/PrixAvecReduction';
-import Link from 'next/link';
 
 interface Article {
   id: string;
@@ -171,7 +170,9 @@ export default function Friperie() {
 
       if (fullArticles) {
         // Calcul du nombre de locations et du prix ajusté
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const mapped = fullArticles.map((article: any) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const enLocation = article.reservations?.some((r: any) =>
             ['en_attente', 'confirmé'].includes(r.statut)
           );
@@ -266,7 +267,7 @@ export default function Friperie() {
               </button>
               {menuJetonsOuvert && (
                 <div className="absolute z-10 mt-2 w-48 bg-white border rounded shadow-md p-2">
-                  {[null, 2, 4, 999].map((val, i) => (
+                  {[null, 2, 4, 999].map((val) => (
                     <label key={val} className="block text-sm py-1 cursor-pointer">
                       <input
                         type="radio"
@@ -325,6 +326,7 @@ export default function Friperie() {
               .map((a) => (
                 <div key={a.id} className="bg-white rounded shadow p-4">
                   <div className="relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={a.image_url} alt={a.titre} className="w-full aspect-[3/4] object-cover rounded" />
                     {a.labels && a.labels.length > 0 && (
                       <div className="absolute top-2 right-2 flex flex-col gap-1">

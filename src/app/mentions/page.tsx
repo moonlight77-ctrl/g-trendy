@@ -5,7 +5,7 @@ export default function MentionsLegales() {
   return (
     <main className="w-full bg-[#F9F5F0] min-h-screen text-[#2F2F2F]">
       {/* On remet la navbar pour la navigation */}
-      <NavbarLanding editionLabel=" – retour à l'accueil" />
+      <NavbarLanding editionLabel=" – retour à l&apos;accueil" />
 
       <div className="mx-auto max-w-3xl px-6 py-16 sm:py-24">
         <h1 className="text-3xl font-bold mb-8 font-serif">Mentions Légales</h1>
@@ -32,7 +32,7 @@ export default function MentionsLegales() {
             <p>
               Le site est hébergé par la société <strong>Vercel Inc.</strong><br />
               Adresse : 440 N Barranca Ave #4133, Covina, CA 91723, États-Unis.<br />
-              (Ou indiquez OVH / AWS si vous n'utilisez pas Vercel).
+              (Ou indiquez OVH / AWS si vous n&apos;utilisez pas Vercel).
             </p>
           </section>
 
@@ -40,13 +40,13 @@ export default function MentionsLegales() {
           <section>
             <h2 className="text-xl font-semibold mb-3 text-emerald-800">3. Données personnelles & Waitlist</h2>
             <p>
-              Les informations recueillies via le formulaire d'inscription à la liste d'attente (adresse email) sont enregistrées dans un fichier informatisé par <strong>GrandDressing</strong>.
+              Les informations recueillies via le formulaire d&apos;inscription à la liste d&apos;attente (adresse email) sont enregistrées dans un fichier informatisé par <strong>GrandDressing</strong>.
             </p>
             <p className="mt-2">
-              Elles sont conservées pendant la durée de lancement du projet et sont destinées exclusivement à l'envoi d'informations concernant l'ouverture du service.
+              Elles sont conservées pendant la durée de lancement du projet et sont destinées exclusivement à l&apos;envoi d&apos;informations concernant l&apos;ouverture du service.
             </p>
             <p className="mt-2">
-              Conformément à la loi « informatique et libertés » et au RGPD, vous pouvez exercer votre droit d'accès, de rectification et de suppression des données vous concernant en contactant : hello@grandressing.com.
+              Conformément à la loi « informatique et libertés » et au RGPD, vous pouvez exercer votre droit d&apos;accès, de rectification et de suppression des données vous concernant en contactant : hello@grandressing.com.
             </p>
           </section>
           
@@ -54,7 +54,7 @@ export default function MentionsLegales() {
            <section>
             <h2 className="text-xl font-semibold mb-3 text-emerald-800">4. Propriété intellectuelle</h2>
             <p>
-              L'ensemble de ce site relève de la législation française et internationale sur le droit d'auteur et la propriété intellectuelle. Tous les droits de reproduction sont réservés, y compris pour les documents téléchargeables et les représentations iconographiques et photographiques.
+              L&apos;ensemble de ce site relève de la législation française et internationale sur le droit d&apos;auteur et la propriété intellectuelle. Tous les droits de reproduction sont réservés, y compris pour les documents téléchargeables et les représentations iconographiques et photographiques.
             </p>
           </section>
 

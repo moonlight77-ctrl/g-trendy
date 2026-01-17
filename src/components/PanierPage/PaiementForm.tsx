@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -17,10 +16,10 @@ export default function PaiementForm({ soldeEstimé }: { soldeEstimé: number | 
           <button
             key={m}
             onClick={() => setPaiement(m)}
-            className={
-              'flex-1 p-3 rounded border ' +
-              (paiement === m ? 'border-purple-600 bg-purple-50' : 'border-gray-300')
-            }
+            // CORRECTION ICI : Utilisation de ` ` (backticks) au lieu de ' ' + (...)
+            className={`flex-1 p-3 rounded border ${
+              paiement === m ? 'border-purple-600 bg-purple-50' : 'border-gray-300'
+            }`}
           >
             {m.toUpperCase()}
           </button>
@@ -35,7 +34,8 @@ export default function PaiementForm({ soldeEstimé }: { soldeEstimé: number | 
       </Button>
       {soldeEstimé !== null && soldeEstimé < 0 && (
         <div className="mt-4 bg-red-50 border border-red-300 text-red-700 text-sm p-3 rounded">
-          Il semble que tu n'aies pas assez de jetons.<br />
+          {/* CORRECTION ICI : n'aies devient n&apos;aies */}
+          Il semble que tu n&apos;aies pas assez de jetons.<br />
           <a href="/acheter-jetons" className="underline font-semibold hover:text-red-800">
             Acheter des jetons supplémentaires →
           </a>
