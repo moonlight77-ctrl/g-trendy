@@ -36,7 +36,7 @@ export default function Inscription() {
         onChange={(e) => setPassword(e.target.value)}
       />
       <button className="bg-blue-600 text-white px-4 py-2 rounded" onClick={handleSignUp}>
-        S'inscrire
+        Sn&apos;inscrire
       </button>
       {message && <p className="text-sm text-gray-700 mt-2">{message}</p>}
     </main>

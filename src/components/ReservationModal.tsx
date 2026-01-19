@@ -3,11 +3,28 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { X } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+// Correction 1 : Suppression de useRouter inutilisé
+// Correction : Ajout de l'import Image
+import Image from 'next/image';
 import { useSideCartStore } from '@/store/useSideCartStore';
 
+// Correction 2 : Définition des interfaces pour remplacer 'any'
+interface TailleArticle {
+  taille: string;
+  disponible: boolean;
+}
+
+interface Article {
+  id: string;
+  titre: string;
+  image_url: string;
+  description?: string;
+  valeur_jeton: number;
+  tailles_articles: TailleArticle[];
+}
+
 interface Props {
-  article: any;
+  article: Article; // Typage strict ici
   onClose: () => void;
   userId: string;
   preselectedTaille?: string;
@@ -18,7 +35,6 @@ export default function ReservationModal({ article, onClose, userId, preselected
   const [message, setMessage] = useState('');
   const [jetons, setJetons] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
-  //const router = useRouter();
   const { setReservations, reservations } = useSideCartStore();
 
   const handleBackgroundClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -56,47 +72,46 @@ export default function ReservationModal({ article, onClose, userId, preselected
     fetchJetons();
   }, [userId]);
 
-const handleReservation = async () => {
-  if (!tailleSelectionnee) return setMessage("Choisis une taille.");
-  if (jetons === null) return setMessage("Chargement des jetons...");
-  if (jetons < article.valeur_jeton) {
-    return setMessage("Jetons insuffisants pour cet article.");
-  }
+  const handleReservation = async () => {
+    if (!tailleSelectionnee) return setMessage("Choisis une taille.");
+    if (jetons === null) return setMessage("Chargement des jetons...");
+    if (jetons < article.valeur_jeton) {
+      return setMessage("Jetons insuffisants pour cet article.");
+    }
 
-  setLoading(true);
+    setLoading(true);
 
-  const { data, error: insertError } = await supabase.from('reservations').insert({
-    article_id: article.id,
-    user_id: userId,
-    taille: tailleSelectionnee,
-    statut: 'en_attente',
-  }).select().single();
-
-  if (insertError || !data) {
-    setMessage("Erreur lors de la réservation.");
-    setLoading(false);
-    return;
-  }
-
-  setReservations([
-    ...reservations,
-    {
-      id: data.id,
+    const { data, error: insertError } = await supabase.from('reservations').insert({
+      article_id: article.id,
+      user_id: userId,
       taille: tailleSelectionnee,
       statut: 'en_attente',
-      user_id: userId,
-      articles: {
-        titre: article.titre,
-        image_url: article.image_url,
-        valeur_jeton: article.valeur_jeton
-      }
-    }
-  ]);
-  setMessage("Réservation ajoutée 🎉");
-  setTimeout(onClose, 1500);
-  setLoading(false);
-};
+    }).select().single();
 
+    if (insertError || !data) {
+      setMessage("Erreur lors de la réservation.");
+      setLoading(false);
+      return;
+    }
+
+    setReservations([
+      ...reservations,
+      {
+        id: data.id,
+        taille: tailleSelectionnee,
+        statut: 'en_attente',
+        user_id: userId,
+        articles: {
+          titre: article.titre,
+          image_url: article.image_url,
+          valeur_jeton: article.valeur_jeton
+        }
+      }
+    ]);
+    setMessage("Réservation ajoutée 🎉");
+    setTimeout(onClose, 1500);
+    setLoading(false);
+  };
 
   return (
     <div 
@@ -109,19 +124,33 @@ const handleReservation = async () => {
       >
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+          className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 z-10"
         >
           <X size={20} />
         </button>
-        <h2 className="text-xl font-bold mb-2">{article.titre}</h2>
-        <img src={article.image_url} alt={article.titre} className="w-full h-48 object-cover rounded mb-2" />
+        
+        <h2 className="text-xl font-bold mb-2 pr-6">{article.titre}</h2>
+        
+        {/* Correction 3 : Remplacement de <img> par <Image /> */}
+        <div className="relative w-full h-48 mb-2">
+          <Image 
+            src={article.image_url} 
+            alt={article.titre} 
+            fill
+            className="object-cover rounded"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          />
+        </div>
+
         <p className="text-sm text-gray-600">{article.description}</p>
         <p className="text-sm mt-2 font-medium text-blue-600">
           Coût : {article.valeur_jeton} jeton(s) | Jetons restants : {jetons ?? '...'}
         </p>
+
         <label className="block mt-4 mb-2 text-sm font-medium">Choisir une taille :</label>
         <div className="flex flex-wrap gap-2">
-          {article.tailles_articles?.map((t: any) => (
+          {/* Typage explicite dans le map */}
+          {article.tailles_articles?.map((t: TailleArticle) => (
             <button
               key={t.taille}
               disabled={!t.disponible}

@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link'; // Import indispensable
 import { smoothScrollTo } from '@/utils/scroll'; // Importez la fonction créée étape 1
 
 export default function HeroWaitlist() {

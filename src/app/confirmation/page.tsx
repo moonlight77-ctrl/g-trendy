@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import Image from 'next/image';
+// Correction 1 : Suppression de l'import Image inutilisé
 import { useSideCartStore, Reservation } from '@/store/useSideCartStore';
 import { Button } from '@/components/button';
 import CommandeArticles from '@/components/confirmation/CommandeArticles';
@@ -19,9 +19,17 @@ interface ArticleSuggestion {
   valeur_jeton: number;
 }
 
+// Correction 2 : Création d'une interface pour remplacer 'any'
+interface AbonnementData {
+  user_id: string;
+  jetons_disponibles: number;
+  [key: string]: any; // Permet de conserver les autres champs de la table si nécessaire
+}
+
 export default function ConfirmationCommande() {
   const [loading, setLoading] = useState(true);
-  const [abonnement, setAbonnement] = useState<any>(null);
+  // Correction 2 : Utilisation de l'interface au lieu de any
+  const [abonnement, setAbonnement] = useState<AbonnementData | null>(null);
   const [reservationsConfirmees, setReservationsConfirmees] = useState<Reservation[]>([]);
   const [suggestions, setSuggestions] = useState<ArticleSuggestion[]>([]);
   const router = useRouter();
@@ -94,7 +102,9 @@ export default function ConfirmationCommande() {
 
     confirmerReservations();
     fetchSuggestions();
-  }, []);
+    
+    // Correction 3 : Ajout des dépendances manquantes (router et setReservations)
+  }, [router, setReservations]);
 
   if (loading) return <p className="p-6">Chargement de la confirmation...</p>;
 
@@ -112,7 +122,8 @@ export default function ConfirmationCommande() {
           </h1>
 
           <CommandeArticles reservations={reservationsConfirmees} />
-          <RecapitulatifCommande total={total} jetonsRestants={abonnement.jetons_disponibles} />
+          {/* Note : abonnement est typé maintenant, donc jetons_disponibles est reconnu */}
+          <RecapitulatifCommande total={total} jetonsRestants={abonnement?.jetons_disponibles ?? 0} />
           <AvisCommande />
           <SuggestionsArticles suggestions={suggestions} />
 

@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { ShoppingBag } from 'lucide-react';
-import { useSideCartStore, Reservation, Vente } from '@/store/useSideCartStore';
+import { useSideCartStore} from '@/store/useSideCartStore';
 
 interface Props {
   userId: string;

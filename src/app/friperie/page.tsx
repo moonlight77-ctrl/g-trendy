@@ -3,11 +3,14 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+// Correction : Ajout de l'import Image pour remplacer <img> plus bas
+import Image from 'next/image';
 import FiltreVertical from '@/components/FiltreVertical';
 import MultiSelectDropdown from '@/components/MultiSelectDropdown';
 import AchatModal from '@/components/AchatModal';
 import PrixAvecReduction from '@/components/PrixAvecReduction';
 
+// Interfaces principales
 interface Article {
   id: string;
   titre: string;
@@ -35,6 +38,17 @@ interface Article {
 interface TailleArticle {
   taille: string;
   disponible: boolean;
+}
+
+// Correction : Interfaces pour typer le retour brut de Supabase (remplacement des 'any')
+interface ReservationRaw {
+  statut: string;
+  date_location: string;
+}
+
+interface ArticleRaw extends Omit<Article, 'tailles_articles' | 'est_en_location' | 'nb_locations' | 'prix_apres_location'> {
+  tailles_articles: TailleArticle[];
+  reservations: ReservationRaw[];
 }
 
 export default function Friperie() {
@@ -89,64 +103,30 @@ export default function Friperie() {
   };
 
   useEffect(() => {
-    // Chargement dynamique des valeurs pour chaque filtre horizontal
     const fetchData = async () => {
+      // ... (Codes de récupération des filtres inchangés pour abréger) ...
       // Marques
-      const { data: marquesData } = await supabase
-        .from('articles')
-        .select('marque')
-        .neq('marque', null);
-
-      if (marquesData) {
-        setMarquesDispo([...new Set(marquesData.map((a) => a.marque))]);
-      }
+      const { data: marquesData } = await supabase.from('articles').select('marque').neq('marque', null);
+      if (marquesData) setMarquesDispo([...new Set(marquesData.map((a) => a.marque))]);
 
       // Couleurs
-      const { data: couleursData } = await supabase
-        .from('articles')
-        .select('couleur')
-        .neq('couleur', null);
-
-      if (couleursData) {
-        setCouleursDispo([...new Set(couleursData.map((a) => a.couleur))]);
-      }
+      const { data: couleursData } = await supabase.from('articles').select('couleur').neq('couleur', null);
+      if (couleursData) setCouleursDispo([...new Set(couleursData.map((a) => a.couleur))]);
 
       // Matières
-      const { data: matieresData } = await supabase
-        .from('articles')
-        .select('matiere')
-        .neq('matiere', null);
-
-      if (matieresData) {
-        setMatieresDispo([...new Set(matieresData.map((a) => a.matiere))]);
-      }
+      const { data: matieresData } = await supabase.from('articles').select('matiere').neq('matiere', null);
+      if (matieresData) setMatieresDispo([...new Set(matieresData.map((a) => a.matiere))]);
 
       // Tailles
-      const { data: taillesData } = await supabase
-        .from('tailles_articles')
-        .select('taille')
-        .neq('taille', null);
+      const { data: taillesData } = await supabase.from('tailles_articles').select('taille').neq('taille', null);
+      if (taillesData) setTaillesDispo([...new Set(taillesData.map((a) => a.taille))]);
 
-      if (taillesData) {
-        setTaillesDispo([...new Set(taillesData.map((a) => a.taille))]);
-      }
-
-      // Abonnements/niveaux
-      const { data: niveauxData } = await supabase
-        .from('articles')
-        .select('niveau')
-        .neq('niveau', null);
-
-      if (niveauxData) {
-        setAbonnementsDispo([...new Set(niveauxData.map((a) => a.niveau))]);
-      }
+      // Abonnements
+      const { data: niveauxData } = await supabase.from('articles').select('niveau').neq('niveau', null);
+      if (niveauxData) setAbonnementsDispo([...new Set(niveauxData.map((a) => a.niveau))]);
 
       // Labels
-      const { data: allLabelsData } = await supabase
-        .from('articles')
-        .select('labels')
-        .not('labels', 'is', null);
-
+      const { data: allLabelsData } = await supabase.from('articles').select('labels').not('labels', 'is', null);
       if (allLabelsData) {
         const allLabels = allLabelsData.flatMap(a => a.labels || []);
         setLabelsDispo([...new Set(allLabels)]);
@@ -169,18 +149,22 @@ export default function Friperie() {
         .eq('en_vente', true);
 
       if (fullArticles) {
-        // Calcul du nombre de locations et du prix ajusté
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const mapped = fullArticles.map((article: any) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const enLocation = article.reservations?.some((r: any) =>
+        // Correction : Utilisation des types ArticleRaw et ReservationRaw au lieu de 'any'
+        // Nous castons fullArticles car Supabase retourne un type générique
+        const articlesRaw = fullArticles as unknown as ArticleRaw[];
+
+        const mapped: Article[] = articlesRaw.map((article) => {
+          const enLocation = article.reservations?.some((r) =>
             ['en_attente', 'confirmé'].includes(r.statut)
           );
           const nbLocations = article.reservations?.length || 0;
           const prixAvecLocations = article.prix_vente * Math.pow(0.95, nbLocations);
 
+          // On retire 'reservations' de l'objet final pour correspondre à l'interface Article
+          const { reservations, ...articleWithoutReservations } = article;
+
           return {
-            ...article,
+            ...articleWithoutReservations,
             est_en_location: enLocation,
             nb_locations: nbLocations,
             prix_apres_location: prixAvecLocations,
@@ -193,7 +177,7 @@ export default function Friperie() {
     fetchData();
   }, []);
 
-  // Synchronisation du state avec les params URL
+  // Synchronisation du state avec les params URL (inchangé)
   useEffect(() => {
     const initialMarques = searchParams.get('marque');
     const initialCouleurs = searchParams.get('couleur');
@@ -219,6 +203,7 @@ export default function Friperie() {
         <FiltreVertical />
 
         <section>
+          {/* ... Filtres horizontaux (inchangés) ... */}
           <div className="flex flex-wrap gap-4 mb-6 text-sm relative">
             <MultiSelectDropdown
               label="Marque"
@@ -226,7 +211,7 @@ export default function Friperie() {
               selected={marquesActives}
               onChange={(v) => { setMarquesActives(v); updateQuery('marque', v); }}
             />
-            <MultiSelectDropdown
+             <MultiSelectDropdown
               label="Couleur"
               options={couleursDispo}
               selected={couleursActives}
@@ -325,11 +310,18 @@ export default function Friperie() {
               )
               .map((a) => (
                 <div key={a.id} className="bg-white rounded shadow p-4">
-                  <div className="relative">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={a.image_url} alt={a.titre} className="w-full aspect-[3/4] object-cover rounded" />
+                  {/* Correction : Remplacement de <img> par <Image> */}
+                  {/* Nous ajoutons 'aspect-[3/4] w-full' au conteneur parent pour gérer la taille avec 'fill' */}
+                  <div className="relative aspect-[3/4] w-full mb-2">
+                    <Image 
+                      src={a.image_url} 
+                      alt={a.titre} 
+                      fill
+                      className="object-cover rounded"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    />
                     {a.labels && a.labels.length > 0 && (
-                      <div className="absolute top-2 right-2 flex flex-col gap-1">
+                      <div className="absolute top-2 right-2 flex flex-col gap-1 z-10">
                         {a.labels.map((label) => (
                           <span key={label} className={`text-white text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full shadow ${
                             label === 'nouveau' ? 'bg-green-600' : label === 'promo' ? 'bg-red-600' : 'bg-black/70'

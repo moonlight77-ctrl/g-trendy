@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
@@ -10,14 +9,30 @@ import CoordonneesForm from '@/components/PanierPage//CoordonneesForm';
 import PaiementForm from '@/components/PanierPage//PaiementForm';
 import Resume from '@/components/PanierPage//Resume';
 
+// Correction 2 : Création de l'interface pour remplacer 'any'
+interface AbonnementData {
+  jetons_disponibles: number;
+  user_id: string;
+  // Permet d'accepter d'autres champs si nécessaire
+  [key: string]: any;
+}
+
+// Correction 4 : Interface pour les données du formulaire
+interface CoordonneesData {
+  nom: string;
+  email: string;
+  adresse: string;
+  [key: string]: any;
+}
+
 export default function PanierPage() {
-  const [userId, setUserId] = useState<string | null>(null);
-  const [abonnement, setAbonnement] = useState<any>(null);
+  // Correction 1 : Suppression de [userId, setUserId] car la variable userId n'était jamais utilisée
+  
+  // Correction 2 : Utilisation de l'interface
+  const [abonnement, setAbonnement] = useState<AbonnementData | null>(null);
   const [step, setStep] = useState(1);
   const containerRef = useRef(null);
-  const router = useRouter()
-
-
+  const router = useRouter();
 
   const { reservations, setReservations, ventes, setVentes } = useSideCartStore();
 
@@ -33,7 +48,7 @@ export default function PanierPage() {
     const fetchData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      setUserId(user.id);
+      // Note : setUserId a été supprimé ici car inutile
 
       const { data: resData } = await supabase
         .from('reservations')
@@ -64,13 +79,15 @@ export default function PanierPage() {
   }, [setReservations, setVentes]);
   
   useEffect(() => {
-  if (step === 3 && totalEuros === 0 && jetonsUtilisés > 0) {
-    router.push('/confirmation'); // Redirige automatiquement si uniquement jetons
-  }
-}, [step, totalEuros, jetonsUtilisés]);
+    if (step === 3 && totalEuros === 0 && jetonsUtilisés > 0) {
+      router.push('/confirmation'); // Redirige automatiquement si uniquement jetons
+    }
+    // Correction 3 : Ajout de 'router' aux dépendances
+  }, [step, totalEuros, jetonsUtilisés, router]);
 
 
-  const handleCoordonneesSubmit = (data: any) => {
+  // Correction 4 : Typage de data et renommage en _data car non utilisé
+  const handleCoordonneesSubmit = (_data: CoordonneesData) => {
     // Enregistrez ou utilisez les données si nécessaire
     setStep(3);
   };

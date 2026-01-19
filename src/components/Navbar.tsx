@@ -8,8 +8,14 @@ import SideCart from '@/components/SideCart';
 import PanierIcon from '@/components/PanierIcon';
 import { useRouter } from 'next/navigation';
 
+// Ajout de l'interface User
+interface User {
+  id: string;
+  email?: string;
+}
+
 export default function Navbar() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null); // ✅ Remplacé any
   const [jetons, setJetons] = useState<number | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const cartTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -69,12 +75,10 @@ export default function Navbar() {
 
         <div className="flex justify-between items-center w-full max-w-6xl">
           <Link href="/comment-ca-marche" className="hover:underline hover:text-[#A8C3A0] transition">
-
             Comment ça marche ?
           </Link>
 
           <div className="text-2xl font-extrabold tracking-wider text-[#2F2F2F] uppercase" style={{ fontFamily: 'Playfair Display, serif' }}>
-
             GranDressing
           </div>
 
@@ -82,13 +86,11 @@ export default function Navbar() {
             {user ? (
               <>
                 <span className="flex items-center text-[#2F2F2F] font-semibold">
-
                   🪙 {jetons ?? '...'} jetons
                 </span>
 
                 <Menu as="div" className="relative">
                   <Menu.Button className="text-[#2F2F2F] hover:text-[#D4B170] font-medium">
-
                     👤 Profil ▾
                   </Menu.Button>
                   <Menu.Items className="absolute right-0 mt-2 w-48 bg-white border rounded shadow-lg py-1 text-sm z-50">
@@ -136,9 +138,11 @@ export default function Navbar() {
             ) : (
               <>
                 <Link href="/inscription" className="hover:text-[#D4B170] transition">
-Inscription</Link>
+                  Inscription
+                </Link>
                 <Link href="/connexion" className="hover:text-[#D4B170] transition">
-Connexion</Link>
+                  Connexion
+                </Link>
               </>
             )}
 
@@ -153,12 +157,11 @@ Connexion</Link>
 
       {/* Ligne basse */}
       <div className="flex justify-center items-center gap-6 px-6 py-1 text-sm font-medium text-[#2F2F2F] border-t border-[#A8C3A0]/40">
-
         <Link href="/catalogue" className="hover:text-[#A8C3A0] transition">Catalogue</Link>
-        <Link href="ofm" className="hover:text-[#A8C3A0] transition">OFM</Link>
+        <Link href="/ofm" className="hover:text-[#A8C3A0] transition">OFM</Link>
         <Link href="/catalogue?type=accessoires" className="hover:text-[#A8C3A0] transition">Accessoire</Link>
         <Link href="/catalogue?type=chaussure" className="hover:text-[#A8C3A0] transition">Chaussure</Link>
-        <Link href="friperie" className="hover:text-[#A8C3A0] transition">Friperie</Link>
+        <Link href="/friperie" className="hover:text-[#A8C3A0] transition">Friperie</Link>
       </div>
 
       <SideCart

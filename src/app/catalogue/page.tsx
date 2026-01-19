@@ -7,6 +7,7 @@ import FiltreVertical from '@/components/FiltreVertical';
 import MultiSelectDropdown from '@/components/MultiSelectDropdown';
 import ReservationModal from '../../components/ReservationModal';
 import Link from 'next/link';
+import Image from 'next/image'; // ✅ Ajouté pour remplacer <img>
 
 interface Article {
   id: string;
@@ -34,9 +35,15 @@ interface TailleArticle {
   disponible: boolean;
 }
 
+// ✅ Ajout de l'interface User
+interface User {
+  id: string;
+  email?: string;
+}
+
 export default function Catalogue() {
   const [articles, setArticles] = useState<Article[]>([]);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null); // ✅ Remplacé any
   const [loadingUser, setLoadingUser] = useState(true);
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [preselectedTaille, setPreselectedTaille] = useState<string | undefined>(undefined);
@@ -276,8 +283,8 @@ export default function Catalogue() {
               </button>
               {menuJetonsOuvert && (
                 <div className="absolute z-10 mt-2 w-48 bg-white border rounded shadow-md p-2">
-                  {[null, 2, 4, 999].map((val, i) => (
-                    <label key={val} className="block text-sm py-1 cursor-pointer">
+                  {[null, 2, 4, 999].map((val) => ( // ✅ Supprimé variable 'i' non utilisée
+                    <label key={val ?? 'all'} className="block text-sm py-1 cursor-pointer">
                       <input
                         type="radio"
                         name="jetons"
@@ -344,9 +351,12 @@ export default function Catalogue() {
               .map((a) => (
                 <div key={a.id} className="bg-white rounded shadow p-4">
                   <div className="relative">
-                    <img 
+                    {/* ✅ Remplacé <img> par <Image> */}
+                    <Image 
                       src={a.image_url}
                       alt={a.titre}
+                      width={400}
+                      height={533}
                       className="w-full aspect-[3/4] object-cover rounded"
                     />
 
@@ -418,7 +428,7 @@ export default function Catalogue() {
           </div>
         </section>
       </div>
-       {/* Modale réservation */}
+      {/* Modale réservation */}
       {selectedArticle && (
         <ReservationModal
           article={selectedArticle}
@@ -426,7 +436,7 @@ export default function Catalogue() {
           onClose={() => setSelectedArticle(null)}
           preselectedTaille={preselectedTaille}
         />
-    )}
+      )}
     </main>
   );
 }

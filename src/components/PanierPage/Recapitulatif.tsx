@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import {useState } from 'react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { useSideCartStore } from '@/store/useSideCartStore';

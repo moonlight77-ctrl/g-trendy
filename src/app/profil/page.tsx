@@ -4,15 +4,46 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import Image from 'next/image';
 
+// ✅ Définition des interfaces pour remplacer les 'any'
+interface User {
+  id: string;
+  email?: string;
+}
+
+interface Article {
+  titre: string;
+  image_url: string;
+}
+
+interface Reservation {
+  id: string;
+  taille: string;
+  date_location: string;
+  statut: string;
+  user_id: string;
+  articles: Article | null; // Peut être null si la jointure échoue ou l'article est supprimé
+}
+
+interface Abonnement {
+  jetons_disponibles: number;
+}
+
 export default function Profil() {
-  const [reservations, setReservations] = useState<any[]>([]);
-  const [user, setUser] = useState<any>(null);
-  const [abonnement, setAbonnement] = useState<any>(null);
+  // ✅ Correction : Utilisation des interfaces définies
+  const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [user, setUser] = useState<User | null>(null);
+  const [abonnement, setAbonnement] = useState<Abonnement | null>(null);
 
   useEffect(() => {
     const getUser = async () => {
       const { data, error } = await supabase.auth.getUser();
-      if (!error) setUser(data.user);
+      if (!error && data.user) {
+        // On ne garde que les infos nécessaires définies dans l'interface User
+        setUser({
+          id: data.user.id,
+          email: data.user.email
+        });
+      }
     };
     getUser();
   }, []);
@@ -26,7 +57,10 @@ export default function Profil() {
         .select(`*, articles (titre, image_url)`)  
         .eq('user_id', user.id);
 
-      if (!error && data) setReservations(data);
+      if (!error && data) {
+        // Cast des données reçues vers le type Reservation[]
+        setReservations(data as unknown as Reservation[]);
+      }
     };
 
     const fetchAbonnement = async () => {
@@ -58,13 +92,13 @@ export default function Profil() {
             <div key={r.id} className="bg-white p-4 rounded shadow flex gap-4">
               <Image
                 src={r.articles?.image_url || '/placeholder.jpg'}
-                alt={r.articles?.titre}
+                alt={r.articles?.titre || 'Article'}
                 width={80}
                 height={100}
                 className="rounded object-cover"
               />
               <div>
-                <p className="font-semibold">{r.articles?.titre}</p>
+                <p className="font-semibold">{r.articles?.titre || 'Titre inconnu'}</p>
                 <p className="text-sm text-gray-500">Taille : {r.taille}</p>
                 <p className="text-sm text-gray-500">Réservé le : {new Date(r.date_location).toLocaleDateString()}</p>
                 <p className="text-sm font-semibold mt-1">Statut : {r.statut}</p>
