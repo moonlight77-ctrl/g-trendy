@@ -22,7 +22,7 @@ export default function MentionsLegales() {
               Immatriculée au RCS de [Ville] sous le numéro [Numéro SIREN]<br />
               Siège social : [Votre Adresse complète]<br />
               Numéro de TVA intracommunautaire : [Votre N° TVA]<br />
-              Email : <a href="mailto:hello@grandressing.com" className="underline hover:text-emerald-700">hello@grandressing.com</a>
+              Email : <a href="mailto:gdcreativebrand@gmail.com" className="underline hover:text-emerald-700">hello@grandressing.com</a>
             </p>
           </section>
 
