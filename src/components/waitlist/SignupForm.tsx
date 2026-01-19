@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 
 export default function SignupForm() {
   const [email, setEmail] = useState("");
@@ -27,7 +27,7 @@ export default function SignupForm() {
     setStatus("loading");
     setMessage("");
 
-    const supabase = createClient();
+    
     const normalizedEmail = email.trim().toLowerCase();
 
     try {
