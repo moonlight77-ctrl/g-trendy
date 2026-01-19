@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, FormEvent } from "react";
 import { supabase } from "@/lib/supabase";
 
 export default function SignupForm() {
@@ -11,23 +11,20 @@ export default function SignupForm() {
   const [status, setStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
   const [message, setMessage] = useState<string>("");
 
-  const onSubmit = async (e: React.FormEvent) => {
+  const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
     // 2. LOGIQUE HONEYPOT ANTI-SPAM
-    // Si le champ caché 'website' est rempli, c'est un bot.
-    // On simule un succès pour ne pas qu'il sache qu'il a été piégé.
     if (website.trim().length > 0) {
       setStatus("ok");
       setMessage("Merci ! Tu es bien inscrit·e sur la waitlist.");
       setEmail("");
-      return; // On arrête tout ici, pas d'appel à Supabase
+      return; 
     }
 
     setStatus("loading");
     setMessage("");
 
-    
     const normalizedEmail = email.trim().toLowerCase();
 
     try {
@@ -46,6 +43,7 @@ export default function SignupForm() {
       setStatus("ok");
       setMessage("Merci ! Tu es bien inscrit·e sur la waitlist.");
       setEmail("");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setStatus("error");
       setMessage(err?.message ?? "Une erreur est survenue. Réessaie.");
@@ -66,7 +64,7 @@ export default function SignupForm() {
 
           <form onSubmit={onSubmit} className="mt-6 text-left">
             
-            {/* 3. CHAMP CACHÉ HONEYPOT (Invisible pour l'humain) */}
+            {/* 3. CHAMP CACHÉ HONEYPOT */}
             <div className="sr-only" aria-hidden="true">
               <label htmlFor="website">Website</label>
               <input
@@ -75,7 +73,7 @@ export default function SignupForm() {
                 type="text"
                 value={website}
                 onChange={(e) => setWebsite(e.target.value)}
-                tabIndex={-1} // Empêche la navigation au clavier (Tab) sur ce champ
+                tabIndex={-1} 
                 autoComplete="off"
               />
             </div>
